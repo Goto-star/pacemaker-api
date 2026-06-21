@@ -1,0 +1,53 @@
+name: AI Review
+
+# PR に `ai-review` ラベルを貼ったときだけ起動する完全手動トリガー。
+# PR 作成時の自動実行はしない（API 従量課金のコストを読みやすくするため）。
+on:
+  pull_request:
+    types: [ labeled ]
+
+permissions:
+  contents: read
+  pull-requests: write # レビューコメント投稿のため
+
+jobs:
+  ai-review:
+    if: github.event.label.name == 'ai-review'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout base (trusted) code
+        uses: actions/checkout@v6
+        with:
+          # PR の HEAD ではなく base（main 等）を取得する。これにより実行する
+          # ai_review.rb / CLAUDE.md は PR では改ざんできない信頼済みのものになり、
+          # 秘密情報・書き込みトークンを攻撃者制御のコードに渡す経路を断つ。
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0 # base との diff を取るため全履歴を取得する
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          # .ruby-version を尊重する。本番 Gemfile は使わないので bundler-cache は無効。
+          bundler-cache: false
+
+      - name: Install Anthropic SDK
+        run: gem install anthropic --no-document
+
+      - name: Collect diff
+        run: |
+          # 作業ツリーは base（信頼済み）なので、レビュー対象である PR の HEAD を明示取得する。
+          # diff はプロンプトに「データ」として渡すだけで、コードとしては実行しない。
+          git fetch origin "refs/pull/${{ github.event.pull_request.number }}/head"
+          git diff "${{ github.event.pull_request.base.sha }}...FETCH_HEAD" > ai_review_diff.patch
+
+      - name: Run AI review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_REVIEW_DIFF_FILE: ai_review_diff.patch
+        run: ruby .github/scripts/ai_review.rb > ai_review_comment.md
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file ai_review_comment.md
