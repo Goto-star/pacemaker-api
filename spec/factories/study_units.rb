@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :study_unit do
-    material { nil }
+    association :material
     title { "Test Study Unit" }
     position { 1 }
     estimated_minutes { 1 }

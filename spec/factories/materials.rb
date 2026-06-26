@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :material do
-    user { nil }
+    association :user
     title { "Test Material" }
     total_amount { 1 }
     unit_label { "section" }
