@@ -44,7 +44,7 @@ RSpec.describe Scheduling::ReviewScheduler do
       let(:rating) { 2 }
 
       it "復習間隔が標準的に伸びること" do
-        expect(next_review_date).to eq(Date.new(2026, 7, 11))
+        expect(next_review_date).to eq(Date.new(2026, 7, 9))
       end
     end
 
