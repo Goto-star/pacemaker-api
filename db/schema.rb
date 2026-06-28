@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_25_221800) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_28_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_221800) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["user_id"], name: "index_materials_on_user_id"
+  end
+
+  create_table "review_schedules", force: :cascade do |t|
+    t.boolean "completed", default: false, null: false
+    t.datetime "created_at", null: false
+    t.integer "review_count", default: 0, null: false
+    t.date "scheduled_on", null: false
+    t.bigint "study_unit_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["scheduled_on"], name: "index_review_schedules_on_scheduled_on"
+    t.index ["study_unit_id", "scheduled_on"], name: "index_review_schedules_on_study_unit_id_and_scheduled_on"
+    t.index ["study_unit_id"], name: "index_review_schedules_on_study_unit_id"
+  end
+
+  create_table "study_logs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "duration_minutes"
+    t.integer "rating", null: false
+    t.date "studied_on", null: false
+    t.bigint "study_unit_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["study_unit_id", "studied_on"], name: "index_study_logs_on_study_unit_id_and_studied_on"
+    t.index ["study_unit_id"], name: "index_study_logs_on_study_unit_id"
   end
 
   create_table "study_units", force: :cascade do |t|
@@ -46,5 +69,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_221800) do
   end
 
   add_foreign_key "materials", "users"
+  add_foreign_key "review_schedules", "study_units"
+  add_foreign_key "study_logs", "study_units"
   add_foreign_key "study_units", "materials"
 end
