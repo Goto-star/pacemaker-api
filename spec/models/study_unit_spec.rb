@@ -6,6 +6,18 @@ RSpec.describe StudyUnit, type: :model do
       association = described_class.reflect_on_association(:material)
       expect(association.macro).to eq(:belongs_to)
     end
+
+    it 'study_logs を has_many で持ち、削除時に子も destroy すること' do
+      association = described_class.reflect_on_association(:study_logs)
+      expect(association.macro).to eq(:has_many)
+      expect(association.options[:dependent]).to eq(:destroy)
+    end
+
+    it 'review_schedules を has_many で持ち、削除時に子も destroy すること' do
+      association = described_class.reflect_on_association(:review_schedules)
+      expect(association.macro).to eq(:has_many)
+      expect(association.options[:dependent]).to eq(:destroy)
+    end
   end
 
   describe 'バリデーション' do
