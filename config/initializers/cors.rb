@@ -1,6 +1,12 @@
+frontend_origin = ENV.fetch("FRONTEND_ORIGIN") do
+  next "http://localhost:3000" if Rails.env.local?
+
+  raise KeyError, "key not found: FRONTEND_ORIGIN"
+end
+
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins ENV.fetch("FRONTEND_ORIGIN", "http://localhost:3000")
+    origins frontend_origin
 
     resource "*",
       headers: :any,
