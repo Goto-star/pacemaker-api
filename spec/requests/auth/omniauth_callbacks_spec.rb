@@ -26,13 +26,18 @@ RSpec.describe "Google OAuthコールバック", type: :request do
         }.to change(User, :count).by(1)
 
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body).to eq(
-          "user" => {
-            "id" => User.last.id,
-            "email" => "learner@example.com",
-            "name" => "Pace Maker"
-          }
+        expect(response.parsed_body["user"]).to eq(
+          "id" => User.last.id,
+          "email" => "learner@example.com",
+          "name" => "Pace Maker"
         )
+      end
+
+      it "発行されたJWTから当該ユーザーを復号できること" do
+        get "/auth/google_oauth2/callback"
+
+        payload = Authentication::JsonWebToken.decode(response.parsed_body["token"])
+        expect(payload[:user_id]).to eq(User.last.id)
       end
     end
 

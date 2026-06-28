@@ -440,6 +440,7 @@ DEPENDENCIES
   dotenv-rails
   factory_bot_rails
   image_processing (~> 1.2)
+  jwt
   kamal
   omniauth
   omniauth-google-oauth2

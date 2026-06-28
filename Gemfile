@@ -40,6 +40,9 @@ gem "omniauth"
 gem "omniauth-google-oauth2"
 gem "omniauth-rails_csrf_protection"
 
+# Issue and verify the app's own session token (JWT)
+gem "jwt"
+
 group :development do
   # Load local environment variables from .env files
   gem "dotenv-rails"
