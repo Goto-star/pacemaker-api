@@ -4,8 +4,10 @@ module Auth
 
     def create
       user = Authentication::GoogleUserResolver.call(request.env.fetch("omniauth.auth"))
+      token = Authentication::JsonWebToken.encode({ user_id: user.id })
 
       render json: {
+        token: token,
         user: {
           id: user.id,
           email: user.email,
