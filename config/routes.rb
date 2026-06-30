@@ -1,8 +1,13 @@
 Rails.application.routes.draw do
   get "auth/:provider/callback" => "auth/omniauth_callbacks#create"
+  post "auth/development/login" => "auth/development_logins#create"
   get "auth/failure" => "auth/omniauth_callbacks#failure"
 
   get "me" => "me#show", as: :me
+
+  resources :materials, only: %i[index create update destroy] do
+    resources :study_units, only: %i[index create update destroy]
+  end
 
   get "up" => "rails/health#show", as: :rails_health_check
 
