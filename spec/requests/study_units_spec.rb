@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "章ユニットCRUD API", type: :request do
+  let(:user) { create(:user) }
+
   def auth_headers(user)
     token = Authentication::JsonWebToken.encode({ user_id: user.id })
     { "Authorization" => "Bearer #{token}" }
@@ -9,7 +11,6 @@ RSpec.describe "章ユニットCRUD API", type: :request do
   describe "GET /materials/:material_id/study_units" do
     context "自分の教材配下の場合" do
       it "position 昇順で章ユニットを返すこと" do
-        user = create(:user)
         material = create(:material, user: user)
         create(:study_unit, material: material, title: "第2章", position: 2)
         create(:study_unit, material: material, title: "第1章", position: 1)
@@ -24,7 +25,6 @@ RSpec.describe "章ユニットCRUD API", type: :request do
 
     context "他人の教材配下の場合" do
       it "404 を返すこと" do
-        user = create(:user)
         material = create(:material)
 
         get "/materials/#{material.id}/study_units", headers: auth_headers(user)
@@ -47,7 +47,6 @@ RSpec.describe "章ユニットCRUD API", type: :request do
   describe "POST /materials/:material_id/study_units" do
     context "有効なパラメータの場合" do
       it "教材に紐づく章ユニットを作成すること" do
-        user = create(:user)
         material = create(:material, user: user)
         params = { study_unit: { title: "新しい章", position: 1, estimated_minutes: 30 } }
 
@@ -65,7 +64,6 @@ RSpec.describe "章ユニットCRUD API", type: :request do
 
     context "無効なパラメータの場合" do
       it "章ユニットを作成せず 422 を返すこと" do
-        user = create(:user)
         material = create(:material, user: user)
         params = { study_unit: { title: "", estimated_minutes: 0 } }
 
@@ -82,7 +80,6 @@ RSpec.describe "章ユニットCRUD API", type: :request do
   describe "PATCH /materials/:material_id/study_units/:id" do
     context "自分の教材配下の場合" do
       it "章ユニットを更新すること" do
-        user = create(:user)
         material = create(:material, user: user)
         study_unit = create(:study_unit, material: material, title: "更新前")
 
@@ -99,7 +96,6 @@ RSpec.describe "章ユニットCRUD API", type: :request do
   describe "DELETE /materials/:material_id/study_units/:id" do
     context "自分の教材配下の場合" do
       it "章ユニットを削除すること" do
-        user = create(:user)
         material = create(:material, user: user)
         study_unit = create(:study_unit, material: material)
 
