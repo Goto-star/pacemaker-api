@@ -5,6 +5,10 @@ Rails.application.routes.draw do
 
   get "me" => "me#show", as: :me
 
+  resources :materials, only: %i[index create update destroy] do
+    resources :study_units, only: %i[index create update destroy]
+  end
+
   get "up" => "rails/health#show", as: :rails_health_check
 
   get "health" => "health#show", as: :health_check
