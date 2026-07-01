@@ -11,6 +11,12 @@ Rails.application.routes.draw do
     resources :study_units, only: %i[index create update destroy]
   end
 
+  resources :units, only: [] do
+    member do
+      post :review
+    end
+  end
+
   get "up" => "rails/health#show", as: :rails_health_check
 
   get "health" => "health#show", as: :health_check
