@@ -1,11 +1,11 @@
 google_client_id = ENV.fetch("GOOGLE_CLIENT_ID") do
-  next "test-client-id" if Rails.env.test?
+  next "local-client-id" if Rails.env.local?
 
   raise KeyError, "key not found: GOOGLE_CLIENT_ID"
 end
 
 google_client_secret = ENV.fetch("GOOGLE_CLIENT_SECRET") do
-  next "test-client-secret" if Rails.env.test?
+  next "local-client-secret" if Rails.env.local?
 
   raise KeyError, "key not found: GOOGLE_CLIENT_SECRET"
 end
