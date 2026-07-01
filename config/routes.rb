@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   get "me" => "me#show", as: :me
 
   get "today_plan" => "today_plan#show", as: :today_plan
+  get "retentions" => "retentions#index", as: :retentions
 
   resources :materials, only: %i[index create update destroy] do
     resources :study_units, only: %i[index create update destroy]
