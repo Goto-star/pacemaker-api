@@ -28,7 +28,7 @@ services:
       - .:/rails
       - bundle_data:/usr/local/bundle
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       db:
         condition: service_healthy
