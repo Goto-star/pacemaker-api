@@ -20,23 +20,14 @@ RSpec.describe "Google OAuthコールバック", type: :request do
 
   describe "GET /auth/google_oauth2/callback" do
     context "初めてログインするGoogleユーザーの場合" do
-      it "ユーザーを作成してユーザー情報を返す" do
+      it "ユーザーを作成してJWT付きのフロントエンドコールバックへリダイレクトする" do
         expect {
           get "/auth/google_oauth2/callback"
         }.to change(User, :count).by(1)
 
-        expect(response).to have_http_status(:ok)
-        expect(response.parsed_body["user"]).to eq(
-          "id" => User.last.id,
-          "email" => "learner@example.com",
-          "name" => "Pace Maker"
-        )
-      end
-
-      it "発行されたJWTから当該ユーザーを復号できること" do
-        get "/auth/google_oauth2/callback"
-
-        payload = Authentication::JsonWebToken.decode(response.parsed_body["token"])
+        expect(response).to redirect_to(%r{\Ahttp://localhost:3000/auth/callback\?token=})
+        token = Rack::Utils.parse_query(URI.parse(response.location).query).fetch("token")
+        payload = Authentication::JsonWebToken.decode(token)
         expect(payload[:user_id]).to eq(User.last.id)
       end
     end
@@ -49,8 +40,9 @@ RSpec.describe "Google OAuthコールバック", type: :request do
           get "/auth/google_oauth2/callback"
         }.not_to change(User, :count)
 
-        expect(response).to have_http_status(:ok)
-        expect(response.parsed_body.dig("user", "id")).to eq(existing_user.id)
+        token = Rack::Utils.parse_query(URI.parse(response.location).query).fetch("token")
+        payload = Authentication::JsonWebToken.decode(token)
+        expect(payload[:user_id]).to eq(existing_user.id)
       end
     end
   end

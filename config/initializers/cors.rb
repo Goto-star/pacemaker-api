@@ -3,6 +3,7 @@ frontend_origin = ENV.fetch("FRONTEND_ORIGIN") do
 
   raise KeyError, "key not found: FRONTEND_ORIGIN"
 end
+Rails.application.config.x.frontend_origin = frontend_origin
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
