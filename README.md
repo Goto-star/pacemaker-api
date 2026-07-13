@@ -69,7 +69,7 @@
 
 | メソッド | パス | 説明 |
 |----------|------|------|
-| GET | `/auth/:provider/callback` | Google OAuth コールバック。JWT を発行 |
+| GET | `/auth/:provider/callback` | Google OAuth コールバック。JWT を発行しフロントへリダイレクト |
 | POST | `/auth/development/login` | development 限定のテストログイン |
 | GET | `/auth/failure` | OAuth 失敗時 |
 | GET | `/me` | 現在のユーザー情報 |

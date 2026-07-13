@@ -6,14 +6,7 @@ module Auth
       user = Authentication::GoogleUserResolver.call(request.env.fetch("omniauth.auth"))
       token = Authentication::JsonWebToken.encode({ user_id: user.id })
 
-      render json: {
-        token: token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name
-        }
-      }
+      redirect_to frontend_callback_url(token), allow_other_host: true
     end
 
     def failure
@@ -21,6 +14,14 @@ module Auth
     end
 
     private
+
+    def frontend_callback_url(token)
+      uri = URI.parse(Rails.application.config.x.frontend_origin)
+      uri.path = "/auth/callback"
+      uri.query = URI.encode_www_form(token: token)
+      uri.fragment = nil
+      uri.to_s
+    end
 
     def render_invalid_auth
       render json: { error: "Invalid OAuth response" }, status: :unprocessable_entity
