@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_28_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_28_000002) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["user_id"], name: "index_materials_on_user_id"
+  end
+
+  create_table "oauth_authorization_codes", force: :cascade do |t|
+    t.string "code_digest", null: false
+    t.datetime "consumed_at"
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "state_digest", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["code_digest"], name: "index_oauth_authorization_codes_on_code_digest", unique: true
+    t.index ["expires_at"], name: "index_oauth_authorization_codes_on_expires_at"
+    t.index ["user_id"], name: "index_oauth_authorization_codes_on_user_id"
   end
 
   create_table "review_schedules", force: :cascade do |t|
@@ -69,6 +82,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_28_000002) do
   end
 
   add_foreign_key "materials", "users"
+  add_foreign_key "oauth_authorization_codes", "users", on_delete: :cascade
   add_foreign_key "review_schedules", "study_units"
   add_foreign_key "study_logs", "study_units"
   add_foreign_key "study_units", "materials"

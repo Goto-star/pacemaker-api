@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
+  get "auth/start" => "auth/oauth_starts#create"
   get "auth/:provider/callback" => "auth/omniauth_callbacks#create"
+  post "auth/token" => "auth/tokens#create"
   post "auth/development/login" => "auth/development_logins#create"
   get "auth/failure" => "auth/omniauth_callbacks#failure"
 
