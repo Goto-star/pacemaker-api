@@ -2,8 +2,11 @@ class TodayPlanController < ApplicationController
   include Authenticatable
 
   DEFAULT_AVAILABLE_MINUTES = 60
+  AVAILABLE_MINUTES_RANGE = (0..1_440)
 
   def show
+    return render_invalid_available_minutes if available_minutes.nil?
+
     plan = Scheduling::TodayPlanBuilder.new(
       user: current_user,
       available_minutes: available_minutes
@@ -19,7 +22,17 @@ class TodayPlanController < ApplicationController
   private
 
   def available_minutes
-    @available_minutes ||= params[:available_minutes].presence&.to_i || DEFAULT_AVAILABLE_MINUTES
+    return @available_minutes if defined?(@available_minutes)
+    return @available_minutes = DEFAULT_AVAILABLE_MINUTES if params[:available_minutes].blank?
+
+    parsed_value = Integer(params[:available_minutes], exception: false)
+    @available_minutes = parsed_value if AVAILABLE_MINUTES_RANGE.cover?(parsed_value)
+  end
+
+  def render_invalid_available_minutes
+    render json: {
+      error: "available_minutes must be an integer between 0 and 1440"
+    }, status: :unprocessable_content
   end
 
   def plan_item_json(item)
