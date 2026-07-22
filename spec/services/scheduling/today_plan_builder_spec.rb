@@ -55,6 +55,33 @@ RSpec.describe Scheduling::TodayPlanBuilder do
       end
     end
 
+    context "締切付き教材に複数の未学習ユニットがある場合" do
+      it "PaceCalculatorが算出した当日ノルマ分だけを候補にすること" do
+        material = create(:material, user: user, deadline: Date.current + 1)
+        units = Array.new(4) do |index|
+          create(:study_unit, material:, position: index, estimated_minutes: 10)
+        end
+
+        result = described_class.new(user:, available_minutes: 60).call
+
+        expect(all_ids(result)).to eq(units.first(2).map(&:id))
+      end
+    end
+
+    context "締切のない教材に複数の未学習ユニットがある場合" do
+      it "可処分時間で選別できるよう全ユニットを候補にすること" do
+        material = create(:material, user:, deadline: nil)
+        units = Array.new(3) do |index|
+          create(:study_unit, material:, position: index, estimated_minutes: 10)
+        end
+
+        result = described_class.new(user:, available_minutes: 20).call
+
+        expect(scheduled_ids(result)).to eq(units.first(2).map(&:id))
+        expect(result[:unscheduled].map { |item| item[:study_unit].id }).to eq([ units.last.id ])
+      end
+    end
+
     context "将来日付の復習だけを持つユニットの場合" do
       it "当日分に含めないこと" do
         material = create(:material, user: user, deadline: nil)

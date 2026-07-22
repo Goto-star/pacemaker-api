@@ -25,7 +25,8 @@ module Scheduling
     attr_reader :user, :available_minutes, :today
 
     def study_units_with_meta
-      candidate_study_units.filter_map { |study_unit| meta_for(study_unit) }
+      candidates = candidate_study_units.to_a
+      review_meta(candidates) + new_unit_meta_for_daily_pace(candidates)
     end
 
     def candidate_study_units
@@ -35,16 +36,35 @@ module Scheduling
         .includes(:material, :review_schedules)
     end
 
-    # 当日分に含めるのは「復習が今日以前に予定されているユニット」と
-    # 「まだ一度も学習していない新規ユニット」。将来日付の復習待ちや
-    # 復習完了済みのユニットは当日分から除外する。
-    def meta_for(study_unit)
-      if study_unit.review_schedules.empty?
-        new_unit_meta(study_unit)
-      else
+    # 復習は当日以前の未完了分をすべて候補にする。新規学習は教材ごとに
+    # PaceCalculator が算出した当日ノルマまでに絞り、その後に
+    # DailyPlanner が可処分時間へ収まるものを選ぶ。
+    def review_meta(candidates)
+      candidates.filter_map do |study_unit|
+        next if study_unit.review_schedules.empty?
+
         due = due_review_schedule(study_unit)
-        due && review_unit_meta(study_unit, due)
+        review_unit_meta(study_unit, due) if due
       end
+    end
+
+    def new_unit_meta_for_daily_pace(candidates)
+      candidates
+        .select { |study_unit| study_unit.review_schedules.empty? }
+        .group_by(&:material_id)
+        .flat_map { |_material_id, study_units| paced_new_units(study_units) }
+        .map { |study_unit| new_unit_meta(study_unit) }
+    end
+
+    def paced_new_units(study_units)
+      ordered_units = study_units.sort_by { |study_unit| [ study_unit.position, study_unit.id ] }
+      daily_amount = PaceCalculator.call(
+        remaining_amount: ordered_units.length,
+        deadline: ordered_units.first.material.deadline,
+        as_of: today
+      )
+
+      daily_amount.nil? ? ordered_units : ordered_units.first(daily_amount)
     end
 
     def due_review_schedule(study_unit)

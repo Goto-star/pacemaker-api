@@ -71,5 +71,35 @@ RSpec.describe "今日のプラン取得API", type: :request do
         )
       end
     end
+
+    context "available_minutesが不正な場合" do
+      it "数値でない値を拒否すること" do
+        get "/today_plan", params: { available_minutes: "abc" }, headers: auth_headers(user)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body).to eq(
+          "error" => "available_minutes must be an integer between 0 and 1440"
+        )
+      end
+
+      it "1日の分数を超える値を拒否すること" do
+        get "/today_plan", params: { available_minutes: 1_441 }, headers: auth_headers(user)
+
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
+    context "available_minutesが0の場合" do
+      it "全ユニットをunscheduledとして返すこと" do
+        study_unit = create(:study_unit, material: create(:material, user:), estimated_minutes: 10)
+
+        get "/today_plan", params: { available_minutes: 0 }, headers: auth_headers(user)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["available_minutes"]).to eq(0)
+        expect(response.parsed_body["scheduled"]).to be_empty
+        expect(response.parsed_body["unscheduled"].sole.dig("study_unit", "id")).to eq(study_unit.id)
+      end
+    end
   end
 end
