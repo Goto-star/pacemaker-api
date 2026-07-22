@@ -33,7 +33,9 @@ module PacemakerApi
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # 学習日・復習予定日・今日プランの日付境界は日本時間で統一する。
+    # created_at / updated_at などの時刻はActive Record既定どおりUTCで保存する。
+    config.time_zone = "Asia/Tokyo"
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Only loads a smaller set of middleware suitable for API only apps.
