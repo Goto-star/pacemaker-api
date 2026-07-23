@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Google OAuthコールバック", type: :request do
+  let(:frontend_state) { SecureRandom.urlsafe_base64(32) }
+
   before do
     OmniAuth.config.test_mode = true
     OmniAuth.config.mock_auth[:google_oauth2] = OmniAuth::AuthHash.new(
@@ -20,29 +22,51 @@ RSpec.describe "Google OAuthコールバック", type: :request do
 
   describe "GET /auth/google_oauth2/callback" do
     context "初めてログインするGoogleユーザーの場合" do
-      it "ユーザーを作成してJWT付きのフロントエンドコールバックへリダイレクトする" do
+      it "ユーザーを作成して一回限りコード付きのフロントエンドコールバックへリダイレクトする" do
+        get "/auth/start", params: { state: frontend_state }
+
         expect {
           get "/auth/google_oauth2/callback"
         }.to change(User, :count).by(1)
 
-        expect(response).to redirect_to(%r{\Ahttp://localhost:3000/auth/callback\?token=})
-        token = Rack::Utils.parse_query(URI.parse(response.location).query).fetch("token")
-        payload = Authentication::JsonWebToken.decode(token)
-        expect(payload[:user_id]).to eq(User.last.id)
+        query = Rack::Utils.parse_query(URI.parse(response.location).query)
+        expect(query.fetch("state")).to eq(frontend_state)
+        expect(query).to have_key("code")
+        expect(query).not_to have_key("token")
+        expect(
+          Authentication::AuthorizationCode.consume(
+            code: query.fetch("code"),
+            frontend_state:
+          )
+        ).to eq(User.last)
       end
     end
 
     context "ログイン済みのGoogleユーザーの場合" do
       it "ユーザーを重複作成しない" do
         existing_user = create(:user, google_uid: "google-uid")
+        get "/auth/start", params: { state: frontend_state }
 
         expect {
           get "/auth/google_oauth2/callback"
         }.not_to change(User, :count)
 
-        token = Rack::Utils.parse_query(URI.parse(response.location).query).fetch("token")
-        payload = Authentication::JsonWebToken.decode(token)
-        expect(payload[:user_id]).to eq(existing_user.id)
+        query = Rack::Utils.parse_query(URI.parse(response.location).query)
+        expect(
+          Authentication::AuthorizationCode.consume(
+            code: query.fetch("code"),
+            frontend_state: query.fetch("state")
+          )
+        ).to eq(existing_user)
+      end
+    end
+
+    context "Web側のOAuth stateがない場合" do
+      it "コールバックを拒否する" do
+        get "/auth/google_oauth2/callback"
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body).to eq("error" => "Invalid OAuth response")
       end
     end
   end

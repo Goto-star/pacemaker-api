@@ -4,9 +4,12 @@ module Auth
 
     def create
       user = Authentication::GoogleUserResolver.call(request.env.fetch("omniauth.auth"))
-      token = Authentication::JsonWebToken.encode({ user_id: user.id })
+      frontend_state = session.delete(:frontend_oauth_state)
+      raise ArgumentError, "missing frontend OAuth state" if frontend_state.blank?
 
-      redirect_to frontend_callback_url(token), allow_other_host: true
+      authorization_code = Authentication::AuthorizationCode.issue(user:, frontend_state:)
+
+      redirect_to frontend_callback_url(authorization_code, frontend_state), allow_other_host: true
     end
 
     def failure
@@ -15,16 +18,16 @@ module Auth
 
     private
 
-    def frontend_callback_url(token)
+    def frontend_callback_url(authorization_code, frontend_state)
       uri = URI.parse(Rails.application.config.x.frontend_origin)
       uri.path = "/auth/callback"
-      uri.query = URI.encode_www_form(token: token)
+      uri.query = URI.encode_www_form(code: authorization_code, state: frontend_state)
       uri.fragment = nil
       uri.to_s
     end
 
     def render_invalid_auth
-      render json: { error: "Invalid OAuth response" }, status: :unprocessable_entity
+      render json: { error: "Invalid OAuth response" }, status: :unprocessable_content
     end
   end
 end
